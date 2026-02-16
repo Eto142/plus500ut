@@ -1,0 +1,17 @@
+# Ignore environment files and sensitive data
+.env
+
+
+# Ignore other sensitive files if needed
+*.env
+
+# Laravel default ignores
+/storage/*
+/vendor/
+/node_modules/
+
+# Ignore IDE and OS files
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
