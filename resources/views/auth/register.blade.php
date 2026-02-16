@@ -6,9 +6,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Registration Page</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="/userr/dash/js/plugin/sweetalert/sweetalert.min.js"></script>
 </head>
 
 <body>
+        @if(session('success'))
+            <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                swal({
+                    title: 'Success!',
+                    text: "{{ session('success') }}",
+                    icon: 'success',
+                    button: 'OK'
+                });
+            });
+            </script>
+        @endif
+        @if($errors->any())
+            <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                swal({
+                    title: 'Error',
+                    text: "{{ $errors->first() }}",
+                    icon: 'error',
+                    button: 'OK'
+                });
+            });
+            </script>
+        @endif
     <div class="container">
         <!-- Left Section -->
         <div class="left-section">
