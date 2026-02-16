@@ -56,7 +56,7 @@ class RegisterController extends Controller
             'phone' => ['required', 'string', 'max:255'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'documentType' => 'required|string',
-         'kycDocument' => 'required|file|mimetypes:image/*,application/pdf|max:9000',
+         'kycDocument' => 'required|file|mimetypes:image/*,application/pdf|max:20480',
 
             'otherDocument' => 'nullable|string',
         ]);

@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Registration Page</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="/userr/dash/js/plugin/sweetalert/sweetalert.min.js"></script>
 </head>
 
@@ -192,7 +193,8 @@ function togglePassword(id, el) {
 </script>
 
                 <!-- Submit Button -->
-                <button type="submit">Create Account</button>
+                <button type="submit" id="registerBtn">Create Account</button>
+                <div id="registerLoading" style="display:none; margin:10px 0; color:#013b9e; font-weight:bold;">Processing...</div>
 
                 <!-- Social Options -->
                 <div class="other-options">
@@ -209,15 +211,70 @@ function togglePassword(id, el) {
     </div>
 
     <script>
-        function toggleOtherField() {
-            const otherField = document.getElementById('otherField');
-            const documentType = document.getElementById('documentType');
-            if (documentType.value === 'other') {
-                otherField.style.display = 'block';
-            } else {
-                otherField.style.display = 'none';
-            }
+    function toggleOtherField() {
+        const otherField = document.getElementById('otherField');
+        const documentType = document.getElementById('documentType');
+        if (documentType.value === 'other') {
+            otherField.style.display = 'block';
+        } else {
+            otherField.style.display = 'none';
         }
+    }
+
+    $(function() {
+        $('#registerBtn').click(function(e) {
+            e.preventDefault();
+            var form = $(this).closest('form')[0];
+            var formData = new FormData(form);
+            // Client-side validation
+            var errors = [];
+            if (!form.name.value.trim()) errors.push('Full Name is required.');
+            if (!form.email.value.trim()) errors.push('Email is required.');
+            if (!form.phone.value.trim()) errors.push('Phone Number is required.');
+            if (!form.password.value.trim()) errors.push('Password is required.');
+            if (form.password.value.length < 8) errors.push('Password must be at least 8 characters.');
+            if (form.password.value !== form.password_confirmation.value) errors.push('Passwords do not match.');
+            if (!form.documentType.value) errors.push('Document type is required.');
+            var file = form.kycDocument.files[0];
+            if (!file) errors.push('Document upload is required.');
+            else {
+                var allowed = ['application/pdf','image/jpeg','image/png','image/jpg'];
+                if (allowed.indexOf(file.type) === -1) errors.push('Only PDF or image files allowed.');
+                if (file.size > 20480 * 1024) errors.push('File must be less than 20MB.');
+            }
+            if (errors.length) {
+                swal({title:'Error', text:errors[0], icon:'error', button:'OK'});
+                return;
+            }
+            $('#registerBtn').prop('disabled', true);
+            $('#registerLoading').show();
+            $.ajax({
+                url: form.action,
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                headers: {'X-CSRF-TOKEN': $('input[name="_token"]').val()},
+                success: function(res) {
+                    $('#registerBtn').prop('disabled', false);
+                    $('#registerLoading').hide();
+                    swal({title:'Success!', text:'Registration successful!', icon:'success', button:'OK'}).then(()=>{ window.location='{{ route('login') }}'; });
+                },
+                error: function(xhr) {
+                    $('#registerBtn').prop('disabled', false);
+                    $('#registerLoading').hide();
+                    var msg = 'Registration failed.';
+                    if (xhr.responseJSON && xhr.responseJSON.errors) {
+                        var firstKey = Object.keys(xhr.responseJSON.errors)[0];
+                        msg = xhr.responseJSON.errors[firstKey][0];
+                    } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                        msg = xhr.responseJSON.message;
+                    }
+                    swal({title:'Error', text:msg, icon:'error', button:'OK'});
+                }
+            });
+        });
+    });
     </script>
 </body>
 
