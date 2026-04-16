@@ -16,9 +16,9 @@ class DepositController extends Controller
     {
         $userId = Auth::id();
 
-        // Sum of investments
         $data['usd_sum'] = Transaction::where('user_id', $userId)
-            ->sum('usd_value');
+            ->selectRaw('SUM(CASE WHEN transaction_type = \'ADD\' THEN usd_value ELSE -usd_value END) as net_usd_sum')
+            ->value('net_usd_sum') ?? 0;
 
         $data['cryptos'] =  PaymentSetting::get();
 
@@ -29,9 +29,9 @@ class DepositController extends Controller
     {
         $userId = Auth::id();
 
-        // Sum of investments
         $data['usd_sum'] = Transaction::where('user_id', $userId)
-            ->sum('usd_value');
+            ->selectRaw('SUM(CASE WHEN transaction_type = \'ADD\' THEN usd_value ELSE -usd_value END) as net_usd_sum')
+            ->value('net_usd_sum') ?? 0;
 
         $data['cryptos'] =  PaymentSetting::get();
 

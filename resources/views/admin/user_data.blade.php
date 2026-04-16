@@ -253,16 +253,25 @@
 
                         <div class="form-group">
                             <h5 class="text-light">Select where to Credit/Debit</h5>
-                            <select class="form-control bg-dark text-light" name="type" required>
-
+                            <select class="form-control bg-dark text-light" name="type" id="cryptoType" required>
                                 <option value="ethereum" selected>ETH</option>
                                 <option value="bitcoin">BTC</option>
                             </select>
                         </div>
 
                         <div class="form-group">
-                            <input class="form-control bg-dark text-light" placeholder="Enter amount" type="number"
-                                name="amount" step="0.00000000001" min="0" required>
+                            <input class="form-control bg-dark text-light" placeholder="Enter amount in crypto" type="number"
+                                id="cryptoAmount" name="amount" step="0.00000000001" min="0" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="text-light" style="font-size:0.85em;">
+                                Equivalent USD value
+                                <span id="priceStatus" class="text-warning ml-2" style="font-size:0.85em;"></span>
+                            </label>
+                            <input class="form-control bg-dark text-light" placeholder="Auto-calculated from live price" type="number"
+                                id="usdValue" name="usd_value" step="0.01" min="0" required>
+                            <small class="text-secondary">Fetched live from Binance. You can edit the value manually if needed.</small>
                         </div>
 
 
@@ -616,3 +625,86 @@
     <!-- /Delete user Modal -->
 
     @include('admin.footer')
+
+<script>
+(function () {
+    const cryptoType   = document.getElementById('cryptoType');
+    const cryptoAmount = document.getElementById('cryptoAmount');
+    const usdValue     = document.getElementById('usdValue');
+    const priceStatus  = document.getElementById('priceStatus');
+
+    const symbols = { bitcoin: 'BTCUSDT', ethereum: 'ETHUSDT' };
+    let currentRate = null;
+    let fetchTimer  = null;
+
+    function fetchRate(coin) {
+        const symbol = symbols[coin];
+        if (!symbol) return;
+
+        priceStatus.textContent = 'Fetching price…';
+        priceStatus.className   = 'text-warning ml-2';
+
+        // Primary: Binance public ticker (no API key needed)
+        fetch('https://api.binance.com/api/v3/ticker/price?symbol=' + symbol)
+            .then(r => r.json())
+            .then(data => {
+                if (data && data.price) {
+                    currentRate = parseFloat(data.price);
+                    priceStatus.textContent = '1 ' + coin.toUpperCase() + ' = $' + currentRate.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' (Binance live)';
+                    priceStatus.className   = 'text-success ml-2';
+                    recalculate();
+                } else {
+                    throw new Error('no price');
+                }
+            })
+            .catch(() => {
+                // Fallback: CoinCap
+                fetch('https://api.coincap.io/v2/assets/' + coin)
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data && data.data && data.data.priceUsd) {
+                            currentRate = parseFloat(data.data.priceUsd);
+                            priceStatus.textContent = '1 ' + coin.toUpperCase() + ' = $' + currentRate.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' (CoinCap live)';
+                            priceStatus.className   = 'text-success ml-2';
+                            recalculate();
+                        } else {
+                            throw new Error('no price');
+                        }
+                    })
+                    .catch(() => {
+                        priceStatus.textContent = 'Could not fetch price — enter USD manually.';
+                        priceStatus.className   = 'text-danger ml-2';
+                    });
+            });
+    }
+
+    function recalculate() {
+        const amt = parseFloat(cryptoAmount.value);
+        if (currentRate && !isNaN(amt) && amt > 0) {
+            usdValue.value = (currentRate * amt).toFixed(2);
+        }
+    }
+
+    // Fetch on coin type change
+    cryptoType.addEventListener('change', function () {
+        currentRate = null;
+        usdValue.value = '';
+        fetchRate(this.value);
+    });
+
+    // Recalculate on amount change (debounced)
+    cryptoAmount.addEventListener('input', function () {
+        clearTimeout(fetchTimer);
+        fetchTimer = setTimeout(recalculate, 300);
+    });
+
+    // Fetch price when modal opens
+    document.getElementById('topupModal').addEventListener('show.bs.modal', function () {
+        fetchRate(cryptoType.value);
+    });
+    // jQuery fallback for Bootstrap 3/4
+    $('#topupModal').on('show.bs.modal', function () {
+        fetchRate(cryptoType.value);
+    });
+})();
+</script>

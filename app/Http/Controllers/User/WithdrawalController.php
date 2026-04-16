@@ -19,15 +19,8 @@ class WithdrawalController extends Controller
         $userId = Auth::id();
 
         $data['usd_sum'] = Transaction::where('user_id', $userId)
-        ->sum('usd_value');
-
-
-
-
-
-        return view('user.withdrawal.create',$data);
-    }
-    
+            ->selectRaw('SUM(CASE WHEN transaction_type = \'ADD\' THEN usd_value ELSE -usd_value END) as net_usd_sum')
+            ->value('net_usd_sum') ?? 0;
 
        // Show the withdrawal form
 public function makeWithdrawal(Request $request)
@@ -62,7 +55,9 @@ public function makeWithdrawal(Request $request)
     $routing_number = $request->input('routing_number');
 
     // Calculate the user's total balance in USD
-    $usd_sum = Transaction::where('user_id', $userId)->sum('usd_value');
+    $usd_sum = Transaction::where('user_id', $userId)
+        ->selectRaw('SUM(CASE WHEN transaction_type = \'ADD\' THEN usd_value ELSE -usd_value END) as net_usd_sum')
+        ->value('net_usd_sum') ?? 0;
 
     // Check if the withdrawal amount exceeds the user's balance
     if ($amount > $usd_sum) {
@@ -110,7 +105,8 @@ public function makeWithdrawal(Request $request)
         $userId = Auth::id();
 
         $data['usd_sum'] = Transaction::where('user_id', $userId)
-        ->sum('usd_value');
+            ->selectRaw('SUM(CASE WHEN transaction_type = \'ADD\' THEN usd_value ELSE -usd_value END) as net_usd_sum')
+            ->value('net_usd_sum') ?? 0;
         return view('user.withdrawal.withdraw-wallet',$data);
     }
 

@@ -882,109 +882,27 @@ $data['usd_value'] = Transaction::where('user_id', $userId)
     public function creditDebit(Request $request)
     {
         $request->validate([
-            'user_id' => 'required|exists:users,id',
-            'type' => 'required|string', // ETH, BTC, etc.
-            'amount' => 'required|numeric|min:0',
-            't_type' => 'required|string|in:ADD,SUBTRACT',
+            'user_id'   => 'required|exists:users,id',
+            'type'      => 'required|string',
+            'amount'    => 'required|numeric|min:0',
+            'usd_value' => 'required|numeric|min:0',
+            't_type'    => 'required|string|in:ADD,SUBTRACT',
         ]);
 
         $user = User::find($request->user_id);
-        $cryptoType = $request->type;
-        $cryptoAmount = $request->amount;
-        $transactionType = $request->t_type;
 
-        // Fetch the current exchange rate for the selected cryptocurrency
-        $usdDollarValue = $this->convertToUSD($cryptoType, $cryptoAmount);
-        $userCurrency = $request->input('currency'); // E.g., 'EUR', 'GBP', etc.
-        $usdValue = $request->input('usd_value');    // The value in USD  
-        //$convertedValue = $this->convertToUserCurrency($usdValue, $userCurrency); // covert USD to user currency
-
-
-        // Process transaction
         $transaction = new Transaction();
-        $transaction->user_id = $user->id;
-        $transaction->currency_type = $cryptoType;
-        $transaction->crypto_amount = $cryptoAmount;
-        $transaction->transaction_type = $transactionType;
-        $transaction->usd_value = $usdDollarValue;
-
-
-        // Update user's balance based on transaction type
-        if ($transactionType == 'ADD') {
-            $transaction->usd_value += $usdValue; // Assuming `balance` is in USD
-        } elseif ($transactionType == 'SUBTRACT' && $user->balance >= $usdValue) {
-            $transaction->usd_value -= $usdValue;
-        }
+        $transaction->user_id         = $user->id;
+        $transaction->currency_type   = $request->type;
+        $transaction->crypto_amount   = $request->amount;
+        $transaction->transaction_type = $request->t_type;
+        $transaction->usd_value       = $request->usd_value;
         $transaction->save();
 
         return redirect()->back()->with('success', 'Transaction completed successfully.');
     }
 
 
-    private function convertToUSD($cryptoType, $amount)
-    {
-        $cryptoType = strtolower($cryptoType);
-        // Fetch exchange rate from CoinGecko API
-        $response = Http::get("https://api.coingecko.com/api/v3/simple/price", [
-            'ids' => $cryptoType,  // Use lowercase for the CoinGecko API
-            'vs_currencies' => 'usd'           // CoinGecko uses 'usd' for prices instead of 'USDT'
-        ]);
-
-
-        // Check if the response is successful and the rate exists
-        if ($response->successful() && isset($response->json()[$cryptoType]['usd'])) {
-            $rate = $response->json()[$cryptoType]['usd'];
-            return $rate * $amount; // Convert to USD
-        }
-
-        return null; // Return null if the API request fails or rate not found
-    }
-
-
-
-
-
-    private function convertToUserCurrency($usdValue, $currency)
-    {
-        // Exchangerate.host endpoint for USD as the base currency
-        $apiUrl = "https://api.exchangerate.host/convert?from=USD&to={$currency}";
-
-        // Fetch exchange rate for USD to the selected currency
-        $response = Http::get($apiUrl);
-
-        if ($response->ok() && isset($response['result'])) {
-            // Calculate the converted value
-            return $usdValue * $response['result'];
-        } else {
-            throw new Exception("Unable to retrieve exchange rate.");
-        }
-    }
-
-    public function storeTransaction(Request $request)
-    {
-        $userCurrency = $request->input('currency'); // E.g., 'EUR', 'GBP', etc.
-        $usdValue = $request->input('usd_value');    // The value in USD
-
-        // Convert the USD value to the user's currency
-        try {
-            $convertedValue = $this->convertToUserCurrency($usdValue, $userCurrency);
-        } catch (Exception $e) {
-            return back()->with('error', $e->getMessage());
-        }
-
-        // Store the transaction with both USD and converted values
-        Transaction::create([
-            'user_id' => $request->user()->id,
-            'currency_type' => $request->input('currency_type'), // e.g., 'BTC', 'ETH'
-            'crypto_amount' => $request->input('amount'),
-            'transaction_type' => $request->input('t_type'), // ADD or SUBTRACT
-            'usd_value' => $usdValue,
-            'converted_value' => $convertedValue,
-            'converted_currency' => $userCurrency,
-        ]);
-
-        return back()->with('success', 'Transaction completed in ' . $userCurrency);
-    }
 
     public function editPayment($id)
     {
