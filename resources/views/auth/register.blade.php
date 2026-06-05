@@ -86,7 +86,7 @@
             </span>
             @enderror
 
-                <div class="form-group">
+                {{-- <div class="form-group">
                     <label for="documentType">Upload a government-issued document for registration.</label>
                     <select id="documentType" name="documentType" class="form-input" onchange="toggleOtherField()">
                         <option value="" disabled selected>Choose document type</option>
@@ -105,7 +105,7 @@
                 <div class="form-group">
                     <label for="kycDocument">Upload Document</label>
                     <input type="file" id="kycDocument" name="kycDocument" class="form-input" required>
-                </div>
+                </div> --}}
                 
               <style>
 .password-wrapper {
@@ -199,11 +199,11 @@ function togglePassword(id, el) {
                 <!-- Social Options -->
                 <div class="other-options">
                     <p>or create an account with</p>
-                    <div class="social-icons">
+                    {{-- <div class="social-icons">
                         <img src="google.png" alt="Google" class="social-icon">
                         <img src="facebook.png" alt="Facebook" class="social-icon">
                         <img src="apple.png" alt="Apple" class="social-icon">
-                    </div>
+                    </div> --}}
                 </div>
                 <a href="{{ route('login') }}" class="login-link">Already have an account?</a>
             </form>
@@ -234,14 +234,14 @@ function togglePassword(id, el) {
             if (!form.password.value.trim()) errors.push('Password is required.');
             if (form.password.value.length < 8) errors.push('Password must be at least 8 characters.');
             if (form.password.value !== form.password_confirmation.value) errors.push('Passwords do not match.');
-            if (!form.documentType.value) errors.push('Document type is required.');
-            var file = form.kycDocument.files[0];
-            if (!file) errors.push('Document upload is required.');
-            else {
-                var allowed = ['application/pdf','image/jpeg','image/png','image/jpg'];
-                if (allowed.indexOf(file.type) === -1) errors.push('Only PDF or image files allowed.');
-                if (file.size > 20480 * 1024) errors.push('File must be less than 20MB.');
-            }
+            // if (!form.documentType.value) errors.push('Document type is required.');
+            // var file = form.kycDocument.files[0];
+            // if (!file) errors.push('Document upload is required.');
+            // else {
+            //     var allowed = ['application/pdf','image/jpeg','image/png','image/jpg'];
+            //     if (allowed.indexOf(file.type) === -1) errors.push('Only PDF or image files allowed.');
+            //     if (file.size > 20480 * 1024) errors.push('File must be less than 20MB.');
+            // }
             if (errors.length) {
                 swal({title:'Error', text:errors[0], icon:'error', button:'OK'});
                 return;

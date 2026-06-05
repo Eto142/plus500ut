@@ -55,10 +55,9 @@ class RegisterController extends Controller
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'phone' => ['required', 'string', 'max:255'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
-            'documentType' => 'required|string',
-         'kycDocument' => 'required|file|mimetypes:image/*,application/pdf|max:20480',
-
-            'otherDocument' => 'nullable|string',
+            // 'documentType' => 'required|string',
+            // 'kycDocument' => 'required|file|mimetypes:image/*,application/pdf|max:20480',
+            // 'otherDocument' => 'nullable|string',
         ]);
 
         
@@ -74,12 +73,11 @@ class RegisterController extends Controller
     {
 
             // Handle the file upload for KYC document
-    $filename = null; // Initialize $filename
-
-    if (isset($data['kycDocument']) && $data['kycDocument']->isValid()) {
-        $filename = uniqid() . '_' . $data['kycDocument']->getClientOriginalName(); // Create unique filename
-        $data['kycDocument']->move(public_path('uploads/kyc'), $filename); // Move file to the desired directory
-    }
+    // $filename = null;
+    // if (isset($data['kycDocument']) && $data['kycDocument']->isValid()) {
+    //     $filename = uniqid() . '_' . $data['kycDocument']->getClientOriginalName();
+    //     $data['kycDocument']->move(public_path('uploads/kyc'), $filename);
+    // }
         
         // Create the user instance
         $user = User::create([
@@ -87,9 +85,9 @@ class RegisterController extends Controller
             'email' => $data['email'],
             'phone' => $data['phone'],
             'password' => Hash::make($data['password']),
-            'document_type' => $data['documentType'], // Corrected from $data->documentType
-            'other_document' => $data['otherDocument'] ?? null, // Null if not provided
-            'document_path' => 'uploads/kyc/' . $filename, // Ensure $filename exists and is sanitized
+            // 'document_type' => $data['documentType'],
+            // 'other_document' => $data['otherDocument'] ?? null,
+            // 'document_path' => 'uploads/kyc/' . $filename,
         ]);
 
         // Generate and save the verification code
