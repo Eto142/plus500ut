@@ -22,82 +22,85 @@ class WithdrawalController extends Controller
             ->selectRaw('SUM(CASE WHEN transaction_type = \'ADD\' THEN usd_value ELSE -usd_value END) as net_usd_sum')
             ->value('net_usd_sum') ?? 0;
 
-       // Show the withdrawal form
-public function makeWithdrawal(Request $request)
-{
-    $userId = Auth::id();
-
-    // Validate the incoming request data
-    $validator = Validator::make($request->all(), [
-        'amount' => 'required|numeric|min:0',
-        'method' => 'string',
-        'crypto' => 'string',
-        'wallet' => 'string',
-        'bank_name' => 'string',
-        'account_name' => 'string',
-        'account_number' => 'string',
-        'routing_number' => 'string',
-    ]);
-
-    // // Check if validation fails
-    // if ($validator->fails()) {
-    //     return redirect()->back()->withErrors($validator)->withInput();
-    // }
-
-    // Retrieve form input
-    $amount = $request->input('amount');
-    $method = $request->input('method');
-    $crypto = $request->input('crypto');
-    $wallet = $request->input('wallet');
-    $bank_name = $request->input('bank_name');
-    $account_name = $request->input('account_name');
-    $account_number = $request->input('account_number');
-    $routing_number = $request->input('routing_number');
-
-    // Calculate the user's total balance in USD
-    $usd_sum = Transaction::where('user_id', $userId)
-        ->selectRaw('SUM(CASE WHEN transaction_type = \'ADD\' THEN usd_value ELSE -usd_value END) as net_usd_sum')
-        ->value('net_usd_sum') ?? 0;
-
-    // Check if the withdrawal amount exceeds the user's balance
-    if ($amount > $usd_sum) {
-        return redirect()->back()->withErrors([
-            'amount' => 'The amount exceeds your current balance of ' . $usd_sum . ' USD.'
-        ])->withInput();
+        return view('user.withdrawal.create', $data);
     }
 
-    // Proceed with creating the withdrawal
-    Withdrawal::create([
-        'user_id' => Auth::id(),
-        'method' => $method,
-        'amount' => $amount,
-        'crypto' => $crypto,
-        'wallet' => $wallet,
-        'bank_name' => $bank_name,
-        'account_name' => $account_name,
-        'account_number' => $account_number,
-        'routing_number' => $routing_number,
-        'status' => 'pending', // Set the initial status to pending
-    ]);
+    // Handle withdrawal form submission
+    public function makeWithdrawal(Request $request)
+    {
+        $userId = Auth::id();
 
-    // Prepare data for the confirmation page
-    $data = [
-        'method' => $method,
-        'crypto' => $crypto,
-        'wallet' => $wallet,
-        'bank_name' => $bank_name,
-        'account_name' => $account_name,
-        'account_number' => $account_number,
-        'routing_number' => $routing_number,
-        'amount' => $amount,
-        'transactionId' => uniqid('txn_'), // Generate a unique transaction ID
-    ];
+        // Validate the incoming request data
+        $validator = Validator::make($request->all(), [
+            'amount' => 'required|numeric|min:0',
+            'method' => 'string',
+            'crypto' => 'string',
+            'wallet' => 'string',
+            'bank_name' => 'string',
+            'account_name' => 'string',
+            'account_number' => 'string',
+            'routing_number' => 'string',
+        ]);
 
-    // Return the confirmation view and pass the data with a status message
-    return view('user.withdrawal.confirm', $data)->with([
-        'status' => 'Payment submitted successfully!',
-    ]);
-}
+        // // Check if validation fails
+        // if ($validator->fails()) {
+        //     return redirect()->back()->withErrors($validator)->withInput();
+        // }
+
+        // Retrieve form input
+        $amount = $request->input('amount');
+        $method = $request->input('method');
+        $crypto = $request->input('crypto');
+        $wallet = $request->input('wallet');
+        $bank_name = $request->input('bank_name');
+        $account_name = $request->input('account_name');
+        $account_number = $request->input('account_number');
+        $routing_number = $request->input('routing_number');
+
+        // Calculate the user's total balance in USD
+        $usd_sum = Transaction::where('user_id', $userId)
+            ->selectRaw('SUM(CASE WHEN transaction_type = \'ADD\' THEN usd_value ELSE -usd_value END) as net_usd_sum')
+            ->value('net_usd_sum') ?? 0;
+
+        // Check if the withdrawal amount exceeds the user's balance
+        if ($amount > $usd_sum) {
+            return redirect()->back()->withErrors([
+                'amount' => 'The amount exceeds your current balance of ' . $usd_sum . ' USD.'
+            ])->withInput();
+        }
+
+        // Proceed with creating the withdrawal
+        Withdrawal::create([
+            'user_id' => Auth::id(),
+            'method' => $method,
+            'amount' => $amount,
+            'crypto' => $crypto,
+            'wallet' => $wallet,
+            'bank_name' => $bank_name,
+            'account_name' => $account_name,
+            'account_number' => $account_number,
+            'routing_number' => $routing_number,
+            'status' => 'pending', // Set the initial status to pending
+        ]);
+
+        // Prepare data for the confirmation page
+        $data = [
+            'method' => $method,
+            'crypto' => $crypto,
+            'wallet' => $wallet,
+            'bank_name' => $bank_name,
+            'account_name' => $account_name,
+            'account_number' => $account_number,
+            'routing_number' => $routing_number,
+            'amount' => $amount,
+            'transactionId' => uniqid('txn_'), // Generate a unique transaction ID
+        ];
+
+        // Return the confirmation view and pass the data with a status message
+        return view('user.withdrawal.confirm', $data)->with([
+            'status' => 'Payment submitted successfully!',
+        ]);
+    }
 
 
     public function wallet()
